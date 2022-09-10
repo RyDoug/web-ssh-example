@@ -3,16 +3,22 @@ FROM node:16-bullseye-slim
 WORKDIR /app
 
 # app service SSH config
-COPY sshd_config /etc/ssh
+RUN apt-get update && apt-get install -y openssh-server \
+     && echo "root:Docker!" | chpasswd
 
-RUN mkdir -p /tmp \
-    && mkdir -p /apps
+COPY ../sshd_config /etc/ssh
 
-COPY ssh_setup.sh /tmp
+RUN mkdir -p /tmp
+COPY ../ssh_setup.sh /tmp
 RUN chmod +x /tmp/ssh_setup.sh \
     && (sleep 1;/tmp/ssh_setup.sh 2>&1 > /dev/null)
 # end SSH config
 
 COPY . .
 
-ENTRYPOINT [startup.sh]
+RUN npm install
+RUN chmod +x startup.sh
+
+EXPOSE 80 2222
+
+ENTRYPOINT ["/app/startup.sh"]
